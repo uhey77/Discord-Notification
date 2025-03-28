@@ -48,4 +48,4 @@ jobs:
       # 6) メインスクリプトを実行
       - name: Run main script
         run: |
-          python main.py
+          python submit_notification.py
