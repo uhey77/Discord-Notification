@@ -71,7 +71,7 @@ def main():
             f"Elapsed time: {elapsed_time} min.\n"
             f"notebook_url: {latest_submission.url}"
         )
-        send_discord_notification(message)
+        print(f"https://kaggle.com{send_discord_notification(message)})
 
 def calc_elapsed_minutes(submit_time):
     """Submissionが開始してからの経過分数を返す。"""
