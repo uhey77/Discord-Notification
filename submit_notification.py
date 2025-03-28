@@ -61,7 +61,7 @@ def main():
             f"LB: {latest_submission.publicScore}, "
             f"file_name: {latest_submission.file_name}, "
             f"description: {latest_submission.description}\n"
-            f"notebook_url: {latest_submission.url}"
+            f"notebook_url: https://kaggle.com{latest_submission.url}"
         )
         send_discord_notification(message)
     else:
@@ -69,9 +69,9 @@ def main():
         message = (
             f"[IN PROGRESS] Submission is still {status}. "
             f"Elapsed time: {elapsed_time} min.\n"
-            f"notebook_url: {latest_submission.url}"
+            f"notebook_url: https://kaggle.com{latest_submission.url}"
         )
-        print(f"https://kaggle.com{send_discord_notification(message)})
+        send_discord_notification(message)
 
 def calc_elapsed_minutes(submit_time):
     """Submissionが開始してからの経過分数を返す。"""
