@@ -30,7 +30,7 @@ jobs:
           # pip install -r requirements.txt
 
       # 4) Secretsを環境変数に注入
-      - name: Export ENVIROMENT_VARIABLES
+      - name: Export ENVIROMENTAL_VARIABLES
         run: |
           echo "WEBHOOK_URL=${{ secrets.WEBHOOK_URL }}" >> $GITHUB_ENV
           echo "DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }}" >> $GITHUB_ENV
