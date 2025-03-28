@@ -69,16 +69,23 @@ def update_discord_progress_message(message, notebook_url, message_id):
     update_url = f"{WEBHOOK_URL}/messages/{message_id}?wait=true"
     headers = {'Content-Type': 'application/json'}
 
-    # --- 埋め込みを利用してクリック可能なリンクを設定 ---
+    # # --- 埋め込みを利用してクリック可能なリンクを設定 ---
+    # payload = {
+    #     "content": message,  # テキストとして進捗情報を残す
+    #     "embeds": [
+    #         {
+    #             "title": "Notebook Link",
+    #             "url": f"https://kaggle.com{notebook_url}",  # クリックで飛べるURL
+    #             "description": "Click the title above to open the notebook!"
+    #         }
+    #     ]
+    # }
+
+    # Embedの代わりにテキストとしてリンクを付ける
+    text_with_link = f"{message}\nNotebook Link (text only): https://kaggle.com{notebook_url}"
+
     payload = {
-        "content": message,  # テキストとして進捗情報を残す
-        "embeds": [
-            {
-                "title": "Notebook Link",
-                "url": f"https://kaggle.com{notebook_url}",  # クリックで飛べるURL
-                "description": "Click the title above to open the notebook!"
-            }
-        ]
+        "content": text_with_link
     }
 
     response = requests.patch(update_url, json=payload, headers=headers)
