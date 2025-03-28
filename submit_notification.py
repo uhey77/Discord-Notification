@@ -82,7 +82,7 @@ def update_discord_progress_message(message, notebook_url, message_id):
     # }
 
     # Embedの代わりにテキストとしてリンクを付ける
-    text_with_link = f"{message}\nNotebook Link (text only): https://kaggle.com{notebook_url}"
+    text_with_link = f"{message}\nNotebook Link : https://kaggle.com{notebook_url}"
 
     payload = {
         "content": text_with_link
@@ -160,8 +160,8 @@ def main():
                 ascii=True
             )
 
-            # notebookのURLを追記
-            progress_str = f"{progress_str}\nnotebook_url: kaggle.com{current_submission.url}"
+            # # notebookのURLを追記
+            # progress_str = f"{progress_str}\nnotebook_url: kaggle.com{current_submission.url}"
 
             update_discord_progress_message(progress_str, current_submission.url, progress_message_id)
             print('\r' + progress_str, end='')
