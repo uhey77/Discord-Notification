@@ -1,0 +1,51 @@
+# .github/workflows/submit-check.yml
+
+name: Submit Check  # ワークフローの名前(任意)
+
+on:
+  schedule:
+    - cron: "0 * * * *"  # 毎時0分に1回実行(1時間おき)
+  workflow_dispatch:   # 手動トリガーでも実行可能
+
+jobs:
+  check-submission:
+    runs-on: ubuntu-latest  # 実行環境(仮想マシン)
+
+    steps:
+      # 1) リポジトリのソースをチェックアウト
+      - uses: actions/checkout@v2
+
+      # 2) Pythonのセットアップ
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.9"
+
+      # 3) 必要なライブラリをインストール (requirements.txt がある場合)
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install kaggle requests python-dotenv tqdm
+          # または:
+          # pip install -r requirements.txt
+
+      # 4) Secretsを環境変数に注入
+      - name: Export environment variables
+        run: |
+          echo "WEBHOOK_URL=${{ secrets.WEBHOOK_URL }}" >> $GITHUB_ENV
+          echo "DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }}" >> $GITHUB_ENV
+          echo "DISCORD_CHANNEL_ID=${{ secrets.DISCORD_CHANNEL_ID }}" >> $GITHUB_ENV
+          echo "KAGGLE_USERNAME=${{ secrets.KAGGLE_USERNAME }}" >> $GITHUB_ENV
+          echo "KAGGLE_KEY=${{ secrets.KAGGLE_KEY }}" >> $GITHUB_ENV
+
+      # 5) Kaggle APIキーを~/.kaggle/kaggle.jsonとして配置
+      - name: Setup Kaggle credentials
+        run: |
+          mkdir -p ~/.kaggle
+          echo "{\"username\":\"${{ secrets.KAGGLE_USERNAME }}\",\"key\":\"${{ secrets.KAGGLE_KEY }}\"}" > ~/.kaggle/kaggle.json
+          chmod 600 ~/.kaggle/kaggle.json
+
+      # 6) メインスクリプトを実行
+      - name: Run main script
+        run: |
+          python main.py
