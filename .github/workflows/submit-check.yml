@@ -1,4 +1,4 @@
-name: Kaggle Submission Check
+name: Submission Check "Drawing with LLMs"
 
 on:
   schedule:
