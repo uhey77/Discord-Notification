@@ -9,7 +9,7 @@ import re
 from dotenv import load_dotenv
 
 # .env ファイルから環境変数を読み込む
-load_dotenv()
+load_dotenv(dotenv_path='../.env')
 
 # 環境変数の取得
 TOKEN = os.getenv('TOKEN')
