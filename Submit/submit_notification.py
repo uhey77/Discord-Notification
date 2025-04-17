@@ -5,7 +5,7 @@ import requests
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(dotenv_path='../.env')
 
 WEBHOOK_URL = os.getenv('WEBHOOK_URL')
 if not WEBHOOK_URL:
