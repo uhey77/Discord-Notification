@@ -1,1 +1,5 @@
+# 環境変数
 .env
+
+## kaggle 環境変数
+.kaggle.json
