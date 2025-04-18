@@ -43,7 +43,7 @@ def send_discord_notification(message):
 def extract_competition_name(url_or_name):
     """URLまたは名前からコンペティション名を抽出する"""
     # URLから抽出する正規表現パターン
-    pattern = r'competitions/([^/?&#]+)'
+    pattern = r'https://www.kaggle.com/competitions/([^/?&#]+)'
     match = re.search(pattern, url_or_name)
     if match:
         return match.group(1)
