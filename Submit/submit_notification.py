@@ -48,12 +48,26 @@ def main():
         
         # 利用可能なコンペティションを取得
         competitions = api.competitions_list()
-        competition_names = [comp.ref for comp in competitions]
         
-        # 最初に、指定されたコンペティション名が利用可能かチェック
-        if COMPETITION_NAME not in competition_names:
-            # コンペティションが見つからない場合、利用可能なコンペティションを表示
-            available_comps = ', '.join(competition_names[:5]) + (', ...' if len(competition_names) > 5 else '')
+        # コンペティションの詳細情報を表示（デバッグ用）
+        competition_info = []
+        found_competition = None
+        
+        for comp in competitions:
+            comp_info = f"{comp.ref} (URL: {comp.url})"
+            competition_info.append(comp_info)
+            
+            # 大文字小文字を無視して比較
+            if comp.ref.lower() == COMPETITION_NAME.lower():
+                found_competition = comp
+            # URLから抽出した名前でも比較
+            elif COMPETITION_NAME.lower() in comp.url.lower():
+                found_competition = comp
+        
+        # コンペティションが見つからない場合
+        if not found_competition:
+            # 最大5つのコンペティション情報を表示
+            available_comps = ', '.join(competition_info[:5]) + (', ...' if len(competition_info) > 5 else '')
             message = (
                 f"コンペティション '{COMPETITION_NAME}' が見つかりません。\n"
                 f"利用可能なコンペティション例: {available_comps}\n"
@@ -62,14 +76,18 @@ def main():
             send_discord_notification(message)
             return
             
+        # 見つかったコンペティションを使用
+        actual_competition = found_competition.ref
+        send_discord_notification(f"コンペティション '{actual_competition}' を使用します。")
+            
         # コマンドライン引数がある場合はその番号を取得。なければ 0。
         submission_index = int(sys.argv[1]) if len(sys.argv) > 1 else 0
 
         # サブミッションを取得
-        submissions = api.competition_submissions(COMPETITION_NAME)
+        submissions = api.competition_submissions(actual_competition)
         
         if not submissions:
-            send_discord_notification(f"コンペティション '{COMPETITION_NAME}' にサブミッションが見つかりません。")
+            send_discord_notification(f"コンペティション '{actual_competition}' にサブミッションが見つかりません。")
             return
 
         if submission_index >= len(submissions):
