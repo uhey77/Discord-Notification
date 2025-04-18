@@ -26,7 +26,7 @@ if not DISCORD_CHANNEL_ID:
     raise ValueError("DISCORD_CHANNEL_IDが設定されていません。")
 
 # コンペティション名を環境変数から取得するか、デフォルト値を使用
-COMPETITION_NAME = os.environ.get('COMPETITION_NAME', 'drawing-with-llms')
+TARGET_COMPETITION = os.environ.get('COMPETITION_NAME', 'drawing-with-llms')
 
 def send_discord_notification(message):
     payload = {'content': message}
@@ -40,15 +40,6 @@ def send_discord_notification(message):
         print(f"Discord通知送信失敗: {e}")
         return None
 
-def extract_competition_name(url_or_name):
-    """URLまたは名前からコンペティション名を抽出する"""
-    # URLから抽出する正規表現パターン
-    pattern = r'https://www.kaggle.com/competitions/([^/?&#]+)'
-    match = re.search(pattern, url_or_name)
-    if match:
-        return match.group(1)
-    return url_or_name  # URLでない場合はそのまま返す
-
 def main():
     send_discord_notification('Submission status check start')
 
@@ -56,76 +47,75 @@ def main():
         api = KaggleApi()
         api.authenticate()
         
-        # コンペティション名からURLなどを削除
-        clean_competition_name = extract_competition_name(COMPETITION_NAME)
-        send_discord_notification(f"検索するコンペティション名: '{clean_competition_name}'")
-        
-        # 利用可能なコンペティションを取得
+        # 利用可能なコンペティションを取得して直接確認
         competitions = api.competitions_list()
         
-        # コンペティションの詳細情報を表示（デバッグ用）
-        competition_info = []
-        found_competition = None
+        # 直接コンペティションIDを取得（表示されるリストのURL形式の一部を使用）
+        target_competition_id = None
         
+        # 出力されたデバッグから、コンペティションリストの形式を確認
         for comp in competitions:
-            comp_info = f"{comp.ref}"
-            competition_info.append(comp_info)
-            
-            # 大文字小文字を無視して比較
-            if comp.ref.lower() == clean_competition_name.lower():
-                found_competition = comp
+            # 表示されたURLにdrawing-with-llmsが含まれているかチェック
+            if TARGET_COMPETITION in str(comp):
+                target_competition_id = comp.ref  # 実際のAPIで使用する内部ID
+                break
         
         # コンペティションが見つからない場合
-        if not found_competition:
-            # 最大5つのコンペティション情報を表示
-            available_comps = ', '.join(competition_info[:5]) + (', ...' if len(competition_info) > 5 else '')
-            message = (
-                f"コンペティション '{clean_competition_name}' が見つかりません。\n"
-                f"利用可能なコンペティション例: {available_comps}\n"
-                f"正しいコンペティション名を環境変数 COMPETITION_NAME に設定してください。"
-            )
-            send_discord_notification(message)
-            return
+        if not target_competition_id:
+            send_discord_notification(f"コンペティション '{TARGET_COMPETITION}' が見つかりませんでした。別の方法を試みます。")
             
-        # 見つかったコンペティションを使用
-        actual_competition = found_competition.ref
-        send_discord_notification(f"コンペティション '{actual_competition}' を使用します。")
+            # 直接drawing-with-llmsを使用してみる
+            target_competition_id = TARGET_COMPETITION
+            
+        send_discord_notification(f"コンペティション ID '{target_competition_id}' を使用します。")
             
         # コマンドライン引数がある場合はその番号を取得。なければ 0。
         submission_index = int(sys.argv[1]) if len(sys.argv) > 1 else 0
 
         # サブミッションを取得
-        submissions = api.competition_submissions(actual_competition)
+        try:
+            submissions = api.competition_submissions(target_competition_id)
+            
+            if not submissions:
+                send_discord_notification(f"コンペティション '{target_competition_id}' にサブミッションが見つかりません。")
+                return
+
+            if submission_index >= len(submissions):
+                send_discord_notification(f"無効なサブミッションインデックス: {submission_index}, 最大値: {len(submissions)-1}")
+                return
+
+            latest_submission = submissions[submission_index]
+            status = latest_submission.status  # 例: SubmissionStatus.COMPLETE
+
+            elapsed_time = calc_elapsed_minutes(latest_submission.date)
+
+            # "COMPLETE" が含まれていれば完了とみなす
+            if "COMPLETE" in str(status).upper():
+                message = (
+                    f"[Completed] Submission is still {status}. "
+                    f"Elapsed time: {elapsed_time} min.\n"
+                    f"notebook_url: https://kaggle.com{latest_submission.url}"
+                )
+            else:
+                message = (
+                    f"[IN PROGRESS] Submission is still {status}. "
+                    f"Elapsed time: {elapsed_time} min.\n"
+                    f"notebook_url: https://kaggle.com{latest_submission.url}"
+                )
+
+            send_discord_notification(message)
         
-        if not submissions:
-            send_discord_notification(f"コンペティション '{actual_competition}' にサブミッションが見つかりません。")
-            return
-
-        if submission_index >= len(submissions):
-            send_discord_notification(f"無効なサブミッションインデックス: {submission_index}, 最大値: {len(submissions)-1}")
-            return
-
-        latest_submission = submissions[submission_index]
-        status = latest_submission.status  # 例: SubmissionStatus.COMPLETE
-
-        elapsed_time = calc_elapsed_minutes(latest_submission.date)
-
-        # "COMPLETE" が含まれていれば完了とみなす
-        if "COMPLETE" in str(status).upper():
-            message = (
-                f"[Completed] Submission is still {status}. "
-                f"Elapsed time: {elapsed_time} min.\n"
-                f"notebook_url: https://kaggle.com{latest_submission.url}"
+        except Exception as e:
+            error_message = f"サブミッション取得中にエラーが発生しました: {str(e)}"
+            send_discord_notification(error_message)
+            
+            # 代替リンクを提供
+            fallback_message = (
+                "自動チェックが失敗しました。以下のリンクで手動確認をお願いします：\n"
+                "https://www.kaggle.com/competitions/drawing-with-llms/submissions"
             )
-        else:
-            message = (
-                f"[IN PROGRESS] Submission is still {status}. "
-                f"Elapsed time: {elapsed_time} min.\n"
-                f"notebook_url: https://kaggle.com{latest_submission.url}"
-            )
-
-        send_discord_notification(message)
-        
+            send_discord_notification(fallback_message)
+            
     except Exception as e:
         error_message = f"エラーが発生しました: {str(e)}"
         send_discord_notification(error_message)
