@@ -5,15 +5,23 @@ import requests
 import os
 from dotenv import load_dotenv
 
-load_dotenv(dotenv_path='../.env')
+# .envファイルを読み込む試行（失敗しても続行）
+try:
+    load_dotenv(dotenv_path='../.env')
+except:
+    pass
 
-WEBHOOK_URL = os.getenv('WEBHOOK_URL')
+
+# GitHubアクションの環境変数を優先
+WEBHOOK_URL = os.environ.get('WEBHOOK_URL')
 if not WEBHOOK_URL:
     raise ValueError("WEBHOOK_URLが設定されていません。")
-DISCORD_BOT_TOKEN = os.getenv('DISCORD_BOT_TOKEN')
+
+DISCORD_BOT_TOKEN = os.environ.get('DISCORD_BOT_TOKEN')
 if not DISCORD_BOT_TOKEN:
     raise ValueError("DISCORD_BOT_TOKENが設定されていません。")
-DISCORD_CHANNEL_ID = os.getenv('DISCORD_CHANNEL_ID')
+
+DISCORD_CHANNEL_ID = os.environ.get('DISCORD_CHANNEL_ID')
 if not DISCORD_CHANNEL_ID:
     raise ValueError("DISCORD_CHANNEL_IDが設定されていません。")
 
