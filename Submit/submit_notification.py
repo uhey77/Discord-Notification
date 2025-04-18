@@ -2,6 +2,7 @@ import sys
 import os
 import datetime
 import requests
+import re
 from kaggle.api.kaggle_api_extended import KaggleApi
 from dotenv import load_dotenv
 
@@ -39,12 +40,25 @@ def send_discord_notification(message):
         print(f"Discord通知送信失敗: {e}")
         return None
 
+def extract_competition_name(url_or_name):
+    """URLまたは名前からコンペティション名を抽出する"""
+    # URLから抽出する正規表現パターン
+    pattern = r'competitions/([^/?&#]+)'
+    match = re.search(pattern, url_or_name)
+    if match:
+        return match.group(1)
+    return url_or_name  # URLでない場合はそのまま返す
+
 def main():
     send_discord_notification('Submission status check start')
 
     try:
         api = KaggleApi()
         api.authenticate()
+        
+        # コンペティション名からURLなどを削除
+        clean_competition_name = extract_competition_name(COMPETITION_NAME)
+        send_discord_notification(f"検索するコンペティション名: '{clean_competition_name}'")
         
         # 利用可能なコンペティションを取得
         competitions = api.competitions_list()
@@ -54,14 +68,11 @@ def main():
         found_competition = None
         
         for comp in competitions:
-            comp_info = f"{comp.ref} (URL: {comp.url})"
+            comp_info = f"{comp.ref}"
             competition_info.append(comp_info)
             
             # 大文字小文字を無視して比較
-            if comp.ref.lower() == COMPETITION_NAME.lower():
-                found_competition = comp
-            # URLから抽出した名前でも比較
-            elif COMPETITION_NAME.lower() in comp.url.lower():
+            if comp.ref.lower() == clean_competition_name.lower():
                 found_competition = comp
         
         # コンペティションが見つからない場合
@@ -69,7 +80,7 @@ def main():
             # 最大5つのコンペティション情報を表示
             available_comps = ', '.join(competition_info[:5]) + (', ...' if len(competition_info) > 5 else '')
             message = (
-                f"コンペティション '{COMPETITION_NAME}' が見つかりません。\n"
+                f"コンペティション '{clean_competition_name}' が見つかりません。\n"
                 f"利用可能なコンペティション例: {available_comps}\n"
                 f"正しいコンペティション名を環境変数 COMPETITION_NAME に設定してください。"
             )
