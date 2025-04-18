@@ -100,7 +100,7 @@ def main():
                 message = (
                     f"[IN PROGRESS] Submission is still {status}. "
                     f"Elapsed time: {elapsed_time} min.\n"
-                    f"notebook_url: https://kaggle.com{latest_submission.url}"
+                    f"notebook_url: https://www.kaggle.com{latest_submission.url}"
                 )
 
             send_discord_notification(message)
