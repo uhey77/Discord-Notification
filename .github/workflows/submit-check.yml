@@ -22,13 +22,33 @@ jobs:
           pip install --upgrade pip
           pip install kaggle requests python-dotenv
 
+      # 環境変数と認証ファイルの設定を改善
+      - name: Verify and set environment variables
+        run: |
+          echo "環境変数の確認:"
+          echo "WEBHOOK_URL設定済み: ${{ secrets.WEBHOOK_URL != '' }}"
+          echo "DISCORD_BOT_TOKEN設定済み: ${{ secrets.DISCORD_BOT_TOKEN != '' }}"
+          echo "DISCORD_CHANNEL_ID設定済み: ${{ secrets.DISCORD_CHANNEL_ID != '' }}"
+          echo "KAGGLE_USERNAME設定済み: ${{ secrets.KAGGLE_USERNAME != '' }}"
+          echo "KAGGLE_KEY設定済み: ${{ secrets.KAGGLE_KEY != '' }}"
+
       - name: Set up Kaggle credentials
         run: |
+          echo "Kaggle認証情報を設定します"
           mkdir -p ~/.kaggle
           echo "{\"username\":\"${{ secrets.KAGGLE_USERNAME }}\",\"key\":\"${{ secrets.KAGGLE_KEY }}\"}" > ~/.kaggle/kaggle.json
           chmod 600 ~/.kaggle/kaggle.json
-          # ファイルが正しく作成されたか確認
           ls -la ~/.kaggle/kaggle.json
+          
+          # kaggle.jsonの内容を確認（機密情報を隠して）
+          echo "kaggle.jsonファイルの存在を確認: $(test -f ~/.kaggle/kaggle.json && echo 'あり' || echo 'なし')"
+          echo "kaggle.jsonファイルのパーミッション: $(ls -la ~/.kaggle/kaggle.json | awk '{print $1}')"
+          
+          # Kaggle CLIが機能するか簡単なテスト
+          export KAGGLE_USERNAME="${{ secrets.KAGGLE_USERNAME }}"
+          export KAGGLE_KEY="${{ secrets.KAGGLE_KEY }}"
+          echo "Kaggle CLIでコンペティションリストを取得します"
+          kaggle competitions list -v
 
       - name: Run python script
         env:
@@ -38,4 +58,5 @@ jobs:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
         run: |
+          echo "スクリプトを実行します"
           python Submit/submit_notification.py
